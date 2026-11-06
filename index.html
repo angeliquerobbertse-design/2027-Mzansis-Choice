@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="en-ZA">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mzansi's Choice voting widget (300x600)</title>
+<style>
+  :root{
+    /* South African flag colours */
+    --blue:#001489; --green:#007749; --gold:#FFB81C; --red:#DE3831; --black:#000000;
+    --navy:#001489; --cream:#FAFAF6; --ink:#0A0F2E;
+    --grey:#505766; --line:#D6D8DE; --pale:#FFF2CC; --palegreen:#E2F3EA; --white:#FFFFFF;
+    --head:Cambria, Georgia, "Times New Roman", serif;
+    --body:Arial, Helvetica, sans-serif;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%}
+  body{background:#E9E7E0;display:flex;align-items:center;justify-content:center;font-family:var(--body);color:var(--ink)}
+
+  /* ---------- the 300x600 unit ---------- */
+  #mc{width:300px;height:600px;background:var(--cream);position:relative;overflow:hidden;display:flex;flex-direction:column;
+      box-shadow:0 2px 14px rgba(12,31,63,.18)}
+  #mc button{font-family:var(--body);cursor:pointer}
+  #mc :focus-visible{outline:3px solid var(--blue);outline-offset:2px}
+
+  .bar{height:46px;flex:none;background:var(--blue);position:relative;display:flex;align-items:center;justify-content:space-between;padding:0 14px}
+  .bar::after{content:"";position:absolute;left:0;right:0;bottom:0;height:4px;
+    background:linear-gradient(90deg,var(--green) 0 25%,var(--gold) 25% 50%,var(--red) 50% 75%,var(--black) 75% 100%)}
+  .brand{display:flex;align-items:center;gap:8px;color:#fff;font-weight:700;font-size:13px;letter-spacing:.2px}
+  .dot{width:9px;height:9px;border-radius:50%;background:var(--gold)}
+  .cat{font-size:10px;font-weight:700;letter-spacing:.8px;color:var(--gold);text-transform:uppercase}
+
+  .screen{flex:1;min-height:0;display:none;flex-direction:column;padding:16px 16px 12px}
+  .screen.on{display:flex}
+
+  .eyebrow{font-size:10px;font-weight:700;letter-spacing:1px;color:var(--green);text-transform:uppercase}
+  h1{font-family:var(--head);font-size:30px;line-height:1.08;margin:8px 0 10px;color:var(--navy)}
+  h2{font-family:var(--head);font-size:19px;line-height:1.2;margin:6px 0 12px;color:var(--navy)}
+  p{margin:0;font-size:13px;line-height:1.45;color:var(--grey)}
+
+  .chips{display:flex;gap:6px;flex-wrap:wrap;margin:14px 0 0}
+  .chip{font-size:10.5px;font-weight:700;color:var(--ink);background:var(--palegreen);border:1px solid var(--green);border-radius:99px;padding:4px 9px}
+
+  .steps{list-style:none;margin:14px 0 0;padding:0;display:flex;flex-direction:column;gap:5px}
+  .steps li{display:flex;align-items:center;gap:9px;font-size:12px;color:var(--ink)}
+  .steps b{flex:none;width:20px;height:20px;border-radius:50%;color:#fff;font-size:11px;display:flex;align-items:center;justify-content:center}
+  .tagline{margin-top:auto;display:inline-block;background:var(--gold);color:var(--black);font-family:var(--head);font-style:italic;font-weight:700;font-size:14px;padding:9px 18px;border-radius:99px;align-self:flex-start;margin-bottom:12px}
+
+  .btn{width:100%;height:46px;border:0;border-radius:23px;background:var(--green);color:#fff;font-weight:700;font-size:14px}
+  .btn:hover{filter:brightness(.97)}
+  .btn.navy{background:var(--green);color:#fff}
+  .btn[disabled]{background:#E3E4E8;color:#6B7180;cursor:not-allowed}
+  .btn.ghost{background:#fff;border:2px solid var(--blue);color:var(--blue)}
+  .link{background:none;border:0;padding:6px;color:var(--green);font-weight:700;font-size:11.5px;text-decoration:underline;align-self:center}
+  .small{font-size:10.5px;color:var(--grey);text-align:center;margin:8px 0 2px}
+
+  /* progress */
+  .prog{display:flex;gap:4px}
+  .prog i{flex:1;height:5px;border-radius:3px;background:#E3E4E8}
+  .prog i.d{background:var(--green)}
+  .meta{font-size:10.5px;font-weight:700;color:var(--grey);margin:8px 0 0;letter-spacing:.3px}
+
+  /* options */
+  .opts{display:flex;flex-direction:column;gap:6px;min-height:0;flex:1;overflow-y:auto;scrollbar-width:none;padding:2px 2px 4px}
+  .opts::-webkit-scrollbar{display:none}
+  .opt{display:flex;align-items:center;gap:10px;width:100%;min-height:40px;padding:6px 10px;text-align:left;font-size:13px;color:var(--ink);
+       background:#fff;border:1.5px solid var(--line);border-radius:10px}
+  .opt:hover{border-color:var(--blue)}
+  .opt .r{flex:none;width:16px;height:16px;border-radius:50%;border:1.5px solid #9AA0AC;background:#fff}
+  .opt[aria-checked="true"]{background:var(--palegreen);border:2px solid var(--green);font-weight:700;padding:5px 9px}
+  .opt[aria-checked="true"] .r{background:var(--green);border-color:var(--green);box-shadow:inset 0 0 0 3px #fff}
+  .opts.prov .opt{min-height:34px;padding:3px 10px}
+  .opts.prov .opt[aria-checked="true"]{padding:2px 9px}
+  .opts.prov{gap:5px}
+  .opts.fade{-webkit-mask-image:linear-gradient(#000 calc(100% - 26px),transparent);mask-image:linear-gradient(#000 calc(100% - 26px),transparent)}
+  .opt .lg{flex:none;width:22px;height:22px;border-radius:5px;background:#E9EBF5;color:var(--blue);font-size:9px;font-weight:700;display:flex;align-items:center;justify-content:center}
+
+  .search{width:100%;height:34px;border:1.5px solid var(--line);border-radius:17px;padding:0 12px;font-size:12.5px;font-family:var(--body);color:var(--ink);background:#fff;margin:0 0 8px}
+  .search::placeholder{color:#7B8190}
+  .other{width:100%;height:34px;border:1.5px solid var(--green);border-radius:8px;padding:0 10px;font-size:12.5px;font-family:var(--body);background:#fff;margin:2px 0 4px;display:none}
+  .other.on{display:block}
+  .none{font-size:12px;color:var(--grey);padding:8px 2px}
+
+  .nav{display:flex;gap:8px;align-items:center;margin-top:10px}
+  .nav .btn{flex:1}
+  .back{flex:none;width:46px;height:46px;border-radius:50%;border:2px solid var(--blue);background:#fff;color:var(--blue);font-size:18px;font-weight:700;line-height:1}
+
+  /* done */
+  .tick{width:56px;height:56px;border-radius:50%;background:var(--green);color:#fff;display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:700;margin:6px auto 12px}
+  .center{text-align:center}
+  .while{background:#F0F1F5;border-radius:12px;padding:10px 12px;margin:14px 0 12px}
+  .while b{display:block;font-size:10px;letter-spacing:.8px;color:var(--green);margin-bottom:4px}
+  .while a{font-size:13px;font-weight:700;color:var(--navy);text-decoration:none;line-height:1.3}
+  .while a:hover{text-decoration:underline}
+
+  /* sponsor + disclosure */
+  .foot{flex:none;border-top:1px solid var(--line);background:#fff;height:44px;display:flex;flex-direction:column;justify-content:center;padding:0 14px;gap:2px}
+  .spons{display:none;align-items:center;gap:6px;font-size:10px;color:var(--grey)}
+  .spons.on{display:flex}
+  .spons .tag{font-weight:700;letter-spacing:.6px;text-transform:uppercase;border:1px solid var(--line);border-radius:3px;padding:1px 4px;font-size:8.5px}
+  .spons a,.spons span.n{font-weight:700;color:var(--ink);text-decoration:none}
+  .disc{font-size:9.5px;color:var(--grey);line-height:1.25}
+
+  /* info overlay */
+  .info{position:absolute;inset:46px 0 0 0;background:var(--cream);z-index:5;padding:16px;display:none;flex-direction:column}
+  .info.on{display:flex}
+  .info ul{margin:8px 0 12px;padding-left:18px;font-size:12.5px;line-height:1.45;color:var(--grey)}
+  .info li{margin-bottom:6px}
+  .info .btn{margin-top:auto}
+</style>
+</head>
+<body>
+
+<div id="mc" role="region" aria-label="Mzansi's Choice voting widget">
+  <div class="bar">
+    <div class="brand"><span class="dot"></span>Mzansi's Choice</div>
+    <div class="cat" id="catTag"></div>
+  </div>
+
+  <!-- INTRO -->
+  <section class="screen on" id="s-intro">
+    <div class="eyebrow" id="introCat"></div>
+    <h1>What would you choose?</h1>
+    <p id="introCopy"></p>
+    <div class="chips"><span class="chip">Free</span><span class="chip">No sign-up</span><span class="chip" id="chipTime"></span></div>
+    <ol class="steps" id="steps"></ol>
+    <div class="tagline">You choose. Mzansi decides.</div>
+    <button class="btn" id="startBtn">Start voting</button>
+    <div class="small" id="closes"></div>
+    <button class="link" id="howBtn">How voting works</button>
+  </section>
+
+  <!-- QUESTION -->
+  <section class="screen" id="s-q" aria-live="polite">
+    <div class="prog" id="prog" aria-hidden="true"></div>
+    <div class="meta" id="meta"></div>
+    <h2 id="qText"></h2>
+    <input class="search" id="search" type="search" placeholder="Search all providers" aria-label="Search providers" style="display:none">
+    <div class="opts" id="opts" role="radiogroup" aria-labelledby="qText"></div>
+    <input class="other" id="otherTxt" maxlength="40" placeholder="Type the provider you would choose" aria-label="Other provider">
+    <div class="nav">
+      <button class="back" id="backBtn" aria-label="Previous question">&#8592;</button>
+      <button class="btn navy" id="nextBtn" disabled>Next</button>
+    </div>
+  </section>
+
+  <!-- DONE -->
+  <section class="screen" id="s-done">
+    <div class="tick" aria-hidden="true">&#10003;</div>
+    <h2 class="center" id="doneH" style="margin-top:0">Your vote is in</h2>
+    <p class="center" id="doneCopy"></p>
+    <div class="while"><b>WHILE YOU WAIT</b><a id="whileLink" href="#" target="_blank" rel="noopener"></a></div>
+    <button class="btn ghost" id="shareBtn">Share Mzansi's Choice</button>
+    <a class="link" id="hubLink" href="#" target="_blank" rel="noopener" style="margin-top:auto">Visit the Mzansi's Choice hub</a>
+  </section>
+
+  <!-- ALREADY VOTED -->
+  <section class="screen" id="s-voted">
+    <div class="tick" aria-hidden="true">&#10003;</div>
+    <h2 class="center" style="margin-top:0">You have already voted</h2>
+    <p class="center" id="votedCopy"></p>
+    <div class="while"><b>WHILE YOU WAIT</b><a id="whileLink2" href="#" target="_blank" rel="noopener"></a></div>
+    <a class="link" id="hubLink2" href="#" target="_blank" rel="noopener" style="margin-top:auto">Visit the Mzansi's Choice hub</a>
+  </section>
+
+  <div class="foot">
+    <div class="spons" id="spons"><span class="tag">Advert</span><span id="sponsTxt"></span></div>
+    <div class="disc">Advertising never influences the vote.</div>
+  </div>
+
+  <!-- HOW IT WORKS -->
+  <div class="info" id="info" role="dialog" aria-label="How voting works">
+    <div class="eyebrow">How voting works</div>
+    <h2>Short, free and fair</h2>
+    <ul>
+      <li>Answer a few quick questions, then choose the provider you would pick.</li>
+      <li>One valid vote per category per participant, subject to the agreed validation method.</li>
+      <li>Every provider in the category can be chosen, not only advertisers.</li>
+      <li>Results are published on IOL after voting closes, with the method explained.</li>
+      <li>Results reflect valid responses from participating IOL audiences, not all South Africans.</li>
+    </ul>
+    <a class="link" id="rulesLink" href="#" target="_blank" rel="noopener">Read the full voting rules</a>
+    <button class="btn navy" id="closeInfo">Got it</button>
+  </div>
+</div>
+
+<script>
+/* =====================================================================
+   CAMPAIGN CONFIG: edit this block per campaign. Nothing else needs to change.
+   ===================================================================== */
+const CONFIG = {
+  campaign: 'insurance-car',
+  category: 'Car insurance',
+  closes: '[closing date TBC]',
+  hubUrl: 'https://www.iol.co.za/',               // TODO: Mzansi's Choice hub URL
+  rulesUrl: 'https://www.iol.co.za/',             // TODO: voting rules page
+  relatedText: 'Read: how to compare car insurance',
+  relatedUrl: 'https://www.iol.co.za/',           // TODO: related IOL article
+  endpoint: '',                                    // TODO: vote-collection URL. Empty = demo mode (nothing is sent)
+  // Optional labelled advertiser presence during the voting period. Leave name empty to hide.
+  sponsor: { label: 'Presented by', name: '[Advertiser name]', url: '' },
+  questions: [
+    { id: 'priority', short: 'What matters most', type: 'single', text: 'What matters most when you choose car insurance?',
+      options: ['Monthly premium', 'Excess amount', 'How easy claims are', 'Roadside assistance', 'Insurer reputation'] },
+    { id: 'channel', short: 'How you buy your cover', type: 'single', text: 'How do you usually buy your cover?',
+      options: ['Directly from an insurer', 'Through a broker', 'Using a comparison site', 'Through my bank or employer', 'Not sure'] },
+    { id: 'compare', short: 'How often you compare', type: 'single', text: 'How often do you compare quotes?',
+      options: ['Every year', 'Every few years', 'Only when my premium jumps', 'Rarely or never'] },
+    { id: 'provider', short: 'The provider you would choose', type: 'provider', text: 'Which provider would you choose for car insurance?',
+      // Placeholder names. The live list must include every provider in the category, not only advertisers.
+      providers: ['[Provider A]', '[Provider B]', '[Provider C]', '[Provider D]', '[Provider E]', '[Provider F]', '[Provider G]', '[Provider H]'] }
+  ]
+};
+/* ===================================================================== */
+
+(function(){
+  const $ = id => document.getElementById(id);
+  const Q = CONFIG.questions, N = Q.length;
+  const LS = 'mc_voted_' + CONFIG.campaign;
+  const demo = /[?&]demo\b/.test(location.search);   // ?demo ignores the "already voted" flag
+
+  const safe = {
+    get(k){ try{ return localStorage.getItem(k); }catch(e){ return null; } },
+    set(k,v){ try{ localStorage.setItem(k,v); }catch(e){} }
+  };
+  const shuffle = a => { a = a.slice(); for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; };
+  const initials = n => n.replace(/[\[\]]/g,'').split(/\s+/).map(w=>w[0]).join('').slice(0,2).toUpperCase();
+
+  const answers = {}; let idx = 0; let providerOrder = shuffle(Q[N-1].providers);
+
+  // static text
+  $('catTag').textContent = CONFIG.category;
+  $('introCat').textContent = CONFIG.category;
+  const cols = ['var(--green)','#8A6200','var(--red)','var(--blue)'];
+  $('steps').innerHTML = Q.map((q,i)=>'<li><b style="background:'+cols[i%4]+'">'+(i+1)+'</b><span>'+q.short+'</span></li>').join('');
+  $('introCopy').textContent = N + ' quick questions on everyday cover, ending with the provider you would choose.';
+  $('chipTime').textContent = '60–90 seconds';
+  $('closes').textContent = 'Voting closes ' + CONFIG.closes;
+  [$('hubLink'),$('hubLink2')].forEach(a=>a.href=CONFIG.hubUrl);
+  [$('whileLink'),$('whileLink2')].forEach(a=>{a.href=CONFIG.relatedUrl;a.textContent=CONFIG.relatedText;});
+  $('rulesLink').href = CONFIG.rulesUrl;
+  $('doneCopy').textContent = 'Thank you for taking part. Results will be published on IOL after voting closes ' + CONFIG.closes + '.';
+  $('votedCopy').textContent = 'Thank you for taking part. Results will be published on IOL after voting closes ' + CONFIG.closes + '.';
+  if (CONFIG.sponsor && CONFIG.sponsor.name) {
+    $('spons').classList.add('on');
+    const t = $('sponsTxt'); t.textContent = CONFIG.sponsor.label + ' ';
+    const n = document.createElement(CONFIG.sponsor.url ? 'a' : 'span');
+    if (CONFIG.sponsor.url){ n.href = CONFIG.sponsor.url; n.target = '_blank'; n.rel = 'noopener sponsored'; } else { n.className = 'n'; }
+    n.textContent = CONFIG.sponsor.name; t.appendChild(n);
+  }
+
+  function show(id){ document.querySelectorAll('.screen').forEach(s=>s.classList.toggle('on', s.id===id)); }
+
+  function renderQ(){
+    const q = Q[idx];
+    $('prog').innerHTML = Q.map((_,i)=>'<i class="'+(i<=idx?'d':'')+'"></i>').join('');
+    $('meta').textContent = 'Question ' + (idx+1) + ' of ' + N;
+    $('qText').textContent = q.text;
+    $('nextBtn').textContent = idx === N-1 ? 'Submit my vote' : 'Next';
+    $('backBtn').style.display = idx === 0 ? 'none' : 'block';
+    const isProv = q.type === 'provider';
+    $('search').style.display = isProv ? 'block' : 'none';
+    $('search').value = '';
+    $('otherTxt').classList.remove('on');
+    $('otherTxt').value = (answers.providerOther || '');
+    renderOpts();
+    syncNext();
+    $('qText').focus && $('qText').setAttribute('tabindex','-1');
+  }
+
+  function renderOpts(){
+    const q = Q[idx], box = $('opts'); box.innerHTML = '';
+    box.classList.toggle('prov', q.type === 'provider');
+    const isProv = q.type === 'provider';
+    let list = isProv ? providerOrder.concat(['Other / not listed']) : q.options;
+    if (isProv){
+      const term = $('search').value.trim().toLowerCase();
+      if (term) list = list.filter(x => x === 'Other / not listed' || x.toLowerCase().includes(term));
+    }
+    list.forEach(label => {
+      const b = document.createElement('button');
+      b.type = 'button'; b.className = 'opt'; b.setAttribute('role','radio');
+      b.setAttribute('aria-checked', answers[q.id] === label ? 'true' : 'false');
+      b.innerHTML = '<span class="r"></span>' + (isProv && label !== 'Other / not listed' ? '<span class="lg"></span>' : '') + '<span></span>';
+      b.lastChild.textContent = label;
+      if (isProv && label !== 'Other / not listed') b.querySelector('.lg').textContent = initials(label);
+      b.addEventListener('click', () => {
+        answers[q.id] = label;
+        box.querySelectorAll('.opt').forEach(o => o.setAttribute('aria-checked', o===b ? 'true':'false'));
+        const other = isProv && label === 'Other / not listed';
+        $('otherTxt').classList.toggle('on', other);
+        if (other) $('otherTxt').focus();
+        syncNext();
+      });
+      box.appendChild(b);
+    });
+    if (!list.length){ const d=document.createElement('div'); d.className='none'; d.textContent='No match. Choose "Other / not listed" to add one.'; box.appendChild(d); }
+    if (isProv && answers[q.id] === 'Other / not listed') $('otherTxt').classList.add('on');
+    box.scrollTop = 0; updFade();
+  }
+  function updFade(){ const b = $('opts'); b.classList.toggle('fade', b.scrollHeight - b.scrollTop - b.clientHeight > 4); }
+  $('opts').addEventListener('scroll', updFade);
+
+  function syncNext(){
+    const q = Q[idx]; let ok = !!answers[q.id];
+    if (q.type === 'provider' && answers[q.id] === 'Other / not listed') ok = true; // typed name optional
+    $('nextBtn').disabled = !ok;
+  }
+
+  function submit(){
+    if (answers.provider === 'Other / not listed') answers.providerOther = $('otherTxt').value.trim().slice(0,40);
+    const payload = { campaign: CONFIG.campaign, category: CONFIG.category, answers: answers, submittedAt: new Date().toISOString() };
+    // Host pages can listen for this event.
+    window.dispatchEvent(new CustomEvent('mzansis-choice:vote', { detail: payload }));
+    if (CONFIG.endpoint){
+      try{ fetch(CONFIG.endpoint, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload), keepalive:true }).catch(()=>{}); }catch(e){}
+    } else { console.log('[Mzansi\'s Choice demo mode: vote not sent]', payload); }
+    // Light client-side deterrent only. Real one-vote-per-person validation must be handled server-side.
+    safe.set(LS, '1');
+    show('s-done');
+  }
+
+  $('startBtn').addEventListener('click', () => { idx = 0; show('s-q'); renderQ(); });
+  $('nextBtn').addEventListener('click', () => { if (idx < N-1){ idx++; renderQ(); } else submit(); });
+  $('backBtn').addEventListener('click', () => { if (idx > 0){ idx--; renderQ(); } });
+  $('search').addEventListener('input', renderOpts);
+  $('howBtn').addEventListener('click', () => { $('info').classList.add('on'); $('closeInfo').focus(); });
+  $('closeInfo').addEventListener('click', () => { $('info').classList.remove('on'); $('howBtn').focus(); });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') $('info').classList.remove('on'); });
+  $('shareBtn').addEventListener('click', async () => {
+    const data = { title: "Mzansi's Choice", text: 'I just voted in Mzansi\'s Choice. What would you choose?', url: CONFIG.hubUrl };
+    try{
+      if (navigator.share) await navigator.share(data);
+      else { await navigator.clipboard.writeText(data.text + ' ' + data.url); $('shareBtn').textContent = 'Link copied'; setTimeout(()=>$('shareBtn').textContent="Share Mzansi's Choice",2000); }
+    }catch(e){}
+  });
+
+  if (!demo && safe.get(LS)) show('s-voted');
+})();
+</script>
+</body>
+</html>
