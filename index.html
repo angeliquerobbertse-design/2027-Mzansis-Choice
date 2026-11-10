@@ -216,8 +216,6 @@ const CONFIG = {
 (function(){
   const $ = id => document.getElementById(id);
   const Q = CONFIG.questions, N = Q.length;
-  const LS = 'mc_voted_' + CONFIG.campaign;
-  const demo = /[?&]demo\b/.test(location.search);   // ?demo ignores the "already voted" flag
 
   const safe = {
     get(k){ try{ return localStorage.getItem(k); }catch(e){ return null; } },
@@ -315,8 +313,7 @@ const CONFIG = {
     if (CONFIG.endpoint){
       try{ fetch(CONFIG.endpoint, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload), keepalive:true }).catch(()=>{}); }catch(e){}
     } else { console.log('[Mzansi\'s Choice demo mode: vote not sent]', payload); }
-    // Light client-side deterrent only. Real one-vote-per-person validation must be handled server-side.
-    safe.set(LS, '1');
+    // Demo build: no "already voted" flag is stored. Real one-vote-per-person validation must be handled server-side.
     show('s-done');
   }
 
@@ -335,7 +332,7 @@ const CONFIG = {
     }catch(e){}
   });
 
-  if (!demo && safe.get(LS)) show('s-voted');
+  // Demo build: nothing is remembered, so a refresh always starts again at the intro screen.
 })();
 </script>
 </body>
